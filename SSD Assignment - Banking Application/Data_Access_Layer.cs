@@ -5,12 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
+using SSD_Assignment___Banking_Application;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Banking_Application
 {
     public class Data_Access_Layer
     {
-
+        private AES_DLE encryption = new AES_DLE();
         private List<Bank_Account> accounts;
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
@@ -19,7 +21,7 @@ namespace Banking_Application
         {
             accounts = new List<Bank_Account>();
         }
-
+        // TODO: CHANGEE??
         public static Data_Access_Layer getInstance()
         {
             return instance;
@@ -136,12 +138,12 @@ namespace Banking_Application
                 command.CommandText =
                 @"
                     INSERT INTO Bank_Accounts VALUES(" +
-                    "'" + ba.accountNo + "', " +
-                    "'" + ba.name + "', " +
-                    "'" + ba.address_line_1 + "', " +
-                    "'" + ba.address_line_2 + "', " +
-                    "'" + ba.address_line_3 + "', " +
-                    "'" + ba.town + "', " +
+                    "'" + EncryptField(ba.accountNo) + "', " +
+                    "'" + EncryptField(ba.name) + "', " +
+                    "'" + EncryptField(ba.address_line_1) + "', " +
+                    "'" + EncryptField(ba.address_line_2) + "', " +
+                    "'" + EncryptField(ba.address_line_3) + "', " +
+                    "'" + EncryptField(ba.town) + "', " +
                     ba.balance + ", " +
                     (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
 
@@ -170,8 +172,8 @@ namespace Banking_Application
         
             foreach(Bank_Account ba in accounts)
             {
-
-                if (ba.accountNo.Equals(accNo))
+                string decryptedAccNo = DecryptField(ba.accountNo);
+                if (decryptedAccNo.Equals(accNo))
                 {
                     return ba;
                 }
@@ -290,5 +292,18 @@ namespace Banking_Application
 
         }
 
+        private string EncryptField(string inputField)
+        {
+            byte[] field_data = Encoding.ASCII.GetBytes(inputField);
+            byte[] encrypted_data = encryption.Encrypt(field_data);
+            return Convert.ToBase64String(encrypted_data);
+        }
+
+        private string DecryptField(string inputField)
+        {
+            byte[] bytes = Convert.FromBase64String(inputField);
+            byte[] decrypted_data = encryption.Decrypt(bytes);
+            return Encoding.UTF8.GetString(decrypted_data);
+        }
     }
 }
