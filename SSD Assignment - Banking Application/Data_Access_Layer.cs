@@ -16,10 +16,13 @@ namespace Banking_Application
         private List<Bank_Account> accounts;
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
+        private readonly Logger logger;
+
 
         private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
             accounts = new List<Bank_Account>();
+            logger = new Logger();
         }
         public static Data_Access_Layer getInstance()
         {
@@ -108,7 +111,7 @@ namespace Banking_Application
                     while(dr.Read())
                     {
 
-                        int accountType = dr.GetInt16(7);
+                        int accountType = dr.GetInt16(13);
 
                         if(accountType == Account_Type.Current_Account)
                         {
@@ -126,7 +129,7 @@ namespace Banking_Application
                             ca.town = dr.GetString(10);
                             ca.town_iv = dr.GetString(11);
                             ca.balance = dr.GetDouble(12);
-                            ca.overdraftAmount = dr.GetDouble(13);
+                            ca.overdraftAmount = dr.GetDouble(14);
                             accounts.Add(ca);
                         }
                         else
@@ -145,7 +148,7 @@ namespace Banking_Application
                             sa.town = dr.GetString(10);
                             sa.town_iv = dr.GetString(11);
                             sa.balance = dr.GetDouble(12);
-                            sa.interestRate = dr.GetDouble(14);
+                            sa.interestRate = dr.GetDouble(15);
                             accounts.Add(sa);
                         }
 
@@ -214,9 +217,8 @@ namespace Banking_Application
                 command.ExecuteNonQuery();
 
             }
-
+            logger.Log("N/A",ba.accountNo,"1","N/A","","N/A");
             return ba.accountNo;
-
         }
 
 
@@ -245,6 +247,7 @@ namespace Banking_Application
                             town = DecryptField(ba.town, ba.town_iv),
                             balance = ba.balance
                         };
+                        logger.Log("N/A", ba.accountNo, "3", "N/A", "", "N/A");
                         return decryptedAcc;
                     }
                     else
@@ -259,6 +262,7 @@ namespace Banking_Application
                             town = DecryptField(ba.town, ba.town_iv),
                             balance = ba.balance
                         };
+                        logger.Log("N/A", ba.accountNo, "3", "N/A", "", "N/A");
                         return decryptedAcc;
                     }
                 }
@@ -274,19 +278,17 @@ namespace Banking_Application
          */
         public bool closeBankAccount(String accNo) 
         {
-
+            string decryptedAccNo = "";
             Bank_Account toRemove = null;
-            
             foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
-                string decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedAccNo = DecryptField(ba.accountNo, iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     toRemove = ba;
                     break;
                 }
-
             }
 
             if (toRemove == null)
@@ -303,7 +305,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-
+                logger.Log("N/A", decryptedAccNo, "2", "N/A", "", "N/A");
                 return true;
             }
 
@@ -316,12 +318,12 @@ namespace Banking_Application
          */
         public bool lodge(String accNo, double amountToLodge)
         {
-
+            string decryptedAccNo = "";
             Bank_Account toLodgeTo = null;
             foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
-                string decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedAccNo = DecryptField(ba.accountNo, iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     ba.lodge(amountToLodge);
@@ -344,7 +346,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-
+                logger.Log("N/A", decryptedAccNo, "4", "N/A", "", "N/A");
                 return true;
             }
 
@@ -357,14 +359,14 @@ namespace Banking_Application
          */
         public bool withdraw(String accNo, double amountToWithdraw)
         {
-
+            string decryptedAccNo = "";
             Bank_Account toWithdrawFrom = null;
             bool result = false;
 
             foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
-                string decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedAccNo = DecryptField(ba.accountNo, iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     result = ba.withdraw(amountToWithdraw);
@@ -387,7 +389,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-
+                logger.Log("N/A", decryptedAccNo, "5", "N/A", "", "N/A");
                 return true;
             }
 
