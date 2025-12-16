@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
@@ -12,20 +14,25 @@ namespace Banking_Application
 {
     public class Data_Access_Layer
     {
-        private AES_DLE encryption = new AES_DLE();
+        private readonly AES_DLE encryption = new AES_DLE();
         private List<Bank_Account> accounts;
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
         private readonly Logger logger;
 
 
-        private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
+        private Data_Access_Layer() //Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
             accounts = new List<Bank_Account>();
             logger = new Logger();
         }
         public static Data_Access_Layer getInstance()
         {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
             return instance;
         }
 
@@ -100,7 +107,7 @@ namespace Banking_Application
                 initialiseDatabase();
             else
             {
-
+                accounts = [];
                 using (var connection = getDatabaseConnection())
                 {
                     connection.Open();
@@ -166,6 +173,11 @@ namespace Banking_Application
          */
         public String addBankAccount(Bank_Account ba) 
         {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
 
             if (ba.GetType() == typeof(Current_Account))
                 ba = (Current_Account)ba;
@@ -227,9 +239,14 @@ namespace Banking_Application
             -Decryption on retrieving account
          */
         public Bank_Account findBankAccountByAccNo(String accNo) 
-        { 
-        
-            foreach(Bank_Account ba in accounts)
+        {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
+
+            foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
                 string decryptedAccNo = DecryptField(ba.accountNo, iv);
@@ -280,6 +297,12 @@ namespace Banking_Application
          */
         public bool closeBankAccount(String accNo) 
         {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
+
             string decryptedAccNo = "";
             string decryptedName = "";
             Bank_Account toRemove = null;
@@ -325,6 +348,12 @@ namespace Banking_Application
          */
         public bool lodge(String accNo, double amountToLodge, string reason)
         {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
+
             string decryptedAccNo = "";
             string decryptedName = "";
             Bank_Account toLodgeTo = null;
@@ -372,6 +401,12 @@ namespace Banking_Application
          */
         public bool withdraw(String accNo, double amountToWithdraw, string reason)
         {
+            // Reduce Reflection Check Calling Method
+            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            {
+                throw new MethodAccessException();
+            }
+
             string decryptedAccNo = "";
             string decryptedName = "";
             Bank_Account toWithdrawFrom = null;
@@ -431,5 +466,61 @@ namespace Banking_Application
             byte[] decrypted_data = encryption.Decrypt(bytes, iv_bytes);
             return Encoding.UTF8.GetString(decrypted_data);
         }
+
+        static bool Verify_Calling_Method(string desiredAssesmblyName, string desiredClassName, string desiredMethodName, string desiredFileName = null, int desiredLineNo = 0)
+        {
+
+            StackFrame stackFrame = new StackFrame(2, true);
+            MethodBase actualCallingMethod = stackFrame.GetMethod();
+            string actualCallingMethodName = actualCallingMethod.Name;
+            string actualCallingClass = actualCallingMethod.ReflectedType.Name;
+            string actualCallingAssembly = actualCallingMethod.Module.Name;
+
+            //Check Calling Assembly
+
+            bool assemblyMatch = false;
+
+            if (desiredAssesmblyName != null)
+                assemblyMatch = desiredAssesmblyName.Equals(actualCallingAssembly);
+            else//NULL => No Check Required.
+                assemblyMatch = true;
+
+            //Check Calling Class
+
+            bool classMatch = false;
+
+            if (desiredClassName != null)
+                classMatch = desiredClassName.Equals(actualCallingClass);
+            else//NULL => No Check Required.
+                classMatch = true;
+
+            //Check Calling Method
+
+            bool methodMatch = false;
+
+            if (desiredMethodName != null)
+                methodMatch = desiredMethodName.Equals(actualCallingMethodName);
+            else//NULL => No Check Required.
+                methodMatch = true;
+
+            //Other Checks (Debug Builds Only)
+
+            bool fileNameMatch = true;//Assume True Incase A Release Build Is Used
+            bool lineNoMatch = true;
+
+            if (stackFrame.HasSource() && desiredFileName != null)//If HasSource() == true => Debug Build => File Names And Line Numbers Can Also Be Used
+            {
+                string actualFileName = stackFrame.GetFileName().ToString();//If stackFrame.HasSource() == false => Result of GetFileName() Is null.
+                string actualLineNo = stackFrame.GetFileLineNumber().ToString();//If stackFrame.HasSource() == false => Result of GetLineNumber() Is null.
+                fileNameMatch = desiredFileName.Equals(actualFileName);
+                lineNoMatch = desiredLineNo.Equals(actualLineNo);
+
+            }
+
+            return (assemblyMatch && classMatch && methodMatch && fileNameMatch && lineNoMatch);//If All TRUE, Result Is TRUE.
+
+
+        }
+
     }
 }
