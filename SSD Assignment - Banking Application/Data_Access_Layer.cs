@@ -215,9 +215,9 @@ namespace Banking_Application
                 }
 
                 command.ExecuteNonQuery();
-
+                logger.Log("N/A", ba.accountNo, ba.name, "1", "");
             }
-            logger.Log("N/A",ba.accountNo,"1","N/A","","N/A");
+            GC.Collect(); // Clear Memory
             return ba.accountNo;
         }
 
@@ -245,9 +245,10 @@ namespace Banking_Application
                             address_line_2 = DecryptField(ba.address_line_2, ba.address_line_2_iv),
                             address_line_3 = DecryptField(ba.address_line_3, ba.address_line_3_iv),
                             town = DecryptField(ba.town, ba.town_iv),
-                            balance = ba.balance
+                            balance = ba.balance,
+                            overdraftAmount = ((Current_Account)ba).overdraftAmount
                         };
-                        logger.Log("N/A", ba.accountNo, "3", "N/A", "", "N/A");
+                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, "3", "");
                         return decryptedAcc;
                     }
                     else
@@ -260,15 +261,16 @@ namespace Banking_Application
                             address_line_2 = DecryptField(ba.address_line_2, ba.address_line_2_iv),
                             address_line_3 = DecryptField(ba.address_line_3, ba.address_line_3_iv),
                             town = DecryptField(ba.town, ba.town_iv),
-                            balance = ba.balance
+                            balance = ba.balance,
+                            interestRate = ((Savings_Account)ba).interestRate
                         };
-                        logger.Log("N/A", ba.accountNo, "3", "N/A", "", "N/A");
+                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, "3", "");
                         return decryptedAcc;
                     }
                 }
 
             }
-
+            GC.Collect(); // Clear Memory
             return null; 
         }
 
@@ -279,11 +281,13 @@ namespace Banking_Application
         public bool closeBankAccount(String accNo) 
         {
             string decryptedAccNo = "";
+            string decryptedName = "";
             Bank_Account toRemove = null;
             foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
                 decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedName = DecryptField(ba.name, ba.name_iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     toRemove = ba;
@@ -292,11 +296,13 @@ namespace Banking_Application
             }
 
             if (toRemove == null)
+            {
+                GC.Collect(); // Clear Memory
                 return false;
+            }
             else
             {
                 accounts.Remove(toRemove);
-
                 using (var connection = getDatabaseConnection())
                 {
                     connection.Open();
@@ -305,7 +311,8 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, "2", "N/A", "", "N/A");
+                logger.Log("N/A", decryptedAccNo, decryptedName, "2", "");
+                GC.Collect(); // Clear Memory
                 return true;
             }
 
@@ -316,14 +323,16 @@ namespace Banking_Application
          Lodge
             - Added Decryption on retrieval
          */
-        public bool lodge(String accNo, double amountToLodge)
+        public bool lodge(String accNo, double amountToLodge, string reason)
         {
             string decryptedAccNo = "";
+            string decryptedName = "";
             Bank_Account toLodgeTo = null;
             foreach (Bank_Account ba in accounts)
             {
                 string iv = ba.accountNo_iv;
                 decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedName = DecryptField(ba.name, ba.name_iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     ba.lodge(amountToLodge);
@@ -334,7 +343,10 @@ namespace Banking_Application
             }
 
             if (toLodgeTo == null)
+            {
+                GC.Collect(); // Clear Memory
                 return false;
+            }
             else
             {
 
@@ -346,7 +358,8 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, "4", "N/A", "", "N/A");
+                logger.Log("N/A", decryptedAccNo, decryptedName, "4", reason);
+                GC.Collect(); // Clear Memory
                 return true;
             }
 
@@ -357,9 +370,10 @@ namespace Banking_Application
          Withdraw
             - Added Decryption on retrieval
          */
-        public bool withdraw(String accNo, double amountToWithdraw)
+        public bool withdraw(String accNo, double amountToWithdraw, string reason)
         {
             string decryptedAccNo = "";
+            string decryptedName = "";
             Bank_Account toWithdrawFrom = null;
             bool result = false;
 
@@ -367,6 +381,7 @@ namespace Banking_Application
             {
                 string iv = ba.accountNo_iv;
                 decryptedAccNo = DecryptField(ba.accountNo, iv);
+                decryptedName = DecryptField(ba.name, ba.name_iv);
                 if (decryptedAccNo.Equals(accNo))
                 {
                     result = ba.withdraw(amountToWithdraw);
@@ -389,7 +404,8 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, "5", "N/A", "", "N/A");
+                logger.Log("N/A", decryptedAccNo, decryptedName, "5", reason);
+                GC.Collect(); // Clear Memory
                 return true;
             }
 

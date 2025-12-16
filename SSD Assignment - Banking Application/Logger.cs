@@ -4,13 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Net.Sockets;
+using System.Net;
+using System.Reflection;
 
 namespace SSD_Assignment___Banking_Application
 {
     public class Logger
     {
         private EventLog eventLog;
-        public Logger() { 
+        public Logger()
+        {
 
             if (!EventLog.SourceExists("SSD Banking Application"))
             {
@@ -26,11 +30,42 @@ namespace SSD_Assignment___Banking_Application
             eventLog.WriteEntry("Setup Complete");
         }
 
-        public void Log(string teller, string accNo, string type, string identifier, string reason, string metadata)
+        public void Log(string teller, string accNo, string name, string type, string reason)
         {
             DateTime now = DateTime.Now;
+            string ip = GetLocalIPAddress();
+
+            // https://learn.microsoft.com/en-us/dotnet/fundamentals/reflection/viewing-type-information
+            // Get Metadata about calling assembly
+            Assembly callingAssembly = Assembly.GetCallingAssembly();
+            string assemblyName = callingAssembly.GetName().Name.ToString();
+            double version = callingAssembly.GetName().Version.Major + (callingAssembly.GetName().Version.Minor / 10.0);
+            int hashCode = callingAssembly.GetHashCode();
+            string metadata = "Assembly: " + assemblyName + " | Version: " + version + " | HashCode: " + hashCode;
+
             if (reason == "") { reason = "N/A"; }
-            eventLog.WriteEntry($"Teller: {teller}\tAccount Number: {accNo}\nType: {type}\tTime: {now}\nReason: {reason}\tMetadata: {metadata}");
+            eventLog.WriteEntry(
+                $"Teller: {teller}\n" +
+                $"Account: {accNo} | {name}\n" +
+                $"Type: {type}\n" +
+                $"Time: {now}\n" +
+                $"IP: {ip}\n" +
+                $"Reason: {reason}\n" +
+                $"Metadata: {metadata}");
+        }
+        // Source - https://stackoverflow.com/questions/6803073/get-local-ip-address
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
         }
     }
 }
+

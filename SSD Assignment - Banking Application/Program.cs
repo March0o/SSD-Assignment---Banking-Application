@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Banking_Application
 {
@@ -251,7 +253,7 @@ namespace Banking_Application
                     case "4": //Lodge
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
-
+                        string lodgementReason = ""; // If Lodge Exceeds 10,000
                         ba = dal.findBankAccountByAccNo(accNo);
 
                         if (ba is null)
@@ -284,13 +286,19 @@ namespace Banking_Application
 
                             } while (amountToLodge < 0);
 
-                            dal.lodge(accNo, amountToLodge);
+                            if (amountToLodge > 10000)
+                            {
+                                Console.WriteLine("Large lodgements require reason, Please enter why this lodgement is being made: ");
+                                lodgementReason = Console.ReadLine();
+                            }
+
+                            dal.lodge(accNo, amountToLodge, lodgementReason);
                         }
                         break;
                     case "5": //Withdraw
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
-
+                        string withdrawlReason = ""; // If Withdraw Exceeds 10,000
                         ba = dal.findBankAccountByAccNo(accNo);
 
                         if (ba is null)
@@ -323,7 +331,13 @@ namespace Banking_Application
 
                             } while (amountToWithdraw < 0);
 
-                            bool withdrawalOK = dal.withdraw(accNo, amountToWithdraw);
+                            if (amountToWithdraw > 10000)
+                            {
+                                Console.WriteLine("Large withdrawls require reason, Please enter why this withdrawl is being made: ");
+                                withdrawlReason = Console.ReadLine();
+                            }
+
+                            bool withdrawalOK = dal.withdraw(accNo, amountToWithdraw, withdrawlReason);
 
                             if(withdrawalOK == false)
                             {
