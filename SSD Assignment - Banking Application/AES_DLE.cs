@@ -9,10 +9,13 @@ namespace SSD_Assignment___Banking_Application
 {
     public class AES_DLE
     {
-        public byte[] Encrypt(byte[] plaintext_data)
+        public (byte[] ciphertext, byte[] iv) Encrypt(byte[] plaintext_data)
         {
             Aes aes = Setup_AES();
-            byte[] ciphertext_data;//Byte Array Where Result Of Encryption Operation Will Be Stored.
+            aes.GenerateIV();       // NEW random IV per encryption
+            byte[] iv = aes.IV;
+
+            byte[] ciphertext_data; //Byte Array Where Result Of Encryption Operation Will Be Stored.
 
             ICryptoTransform encryptor = aes.CreateEncryptor();//Object That Contains The AES Encryption Algorithm (Using The Key and IV Value Specified In The AES Object). 
 
@@ -29,13 +32,14 @@ namespace SSD_Assignment___Banking_Application
             ciphertext_data = msEncrypt.ToArray();//Output Result Of Encryption Operation In Byte Array Form.
             msEncrypt.Dispose();//Closes MemoryStream
 
-            return ciphertext_data;
+            return (ciphertext_data, iv);
 
         }
 
-        public byte[] Decrypt(byte[] ciphertext_data)
+        public byte[] Decrypt(byte[] ciphertext_data, byte[] iv)
         {
             Aes aes = Setup_AES();
+            aes.IV = iv; // Set the IV to the one used during encryption
             byte[] plaintext_data;//Byte Array Where Result Of Decryption Operation Will Be Stored.
 
             ICryptoTransform decryptor = aes.CreateDecryptor();//Object That Contains The AES Decryption Algorithm (Using The Key and IV Value Specified In The AES Object). 
@@ -57,19 +61,22 @@ namespace SSD_Assignment___Banking_Application
 
         }
 
+        // TODO ASK ABOUT KEY LENGTH
         public Aes Setup_AES()
         {
-            string key_string = "oM4BmmHcux7FBnCnk7vI80qUWF/4zfYpFyJnvyYFG3A=";
-            string iv_string = "m3UiRuxNAWhD7ul5tDdwBA==";
+            String crypto_key_name = "COOL-KEY-NAME-3"; 
+            CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider; 
 
-            byte[] key = Convert.FromBase64String(key_string); // 32 bytes for AES-256
-            byte[] iv = Convert.FromBase64String(iv_string);   // 16 bytes for AES block
-
-            Aes aes = Aes.Create();
-            aes.KeySize = 256;                  //Set Cipher Key Size. This Is An AES Only Setting - Possible Values Include '128', '192' and '256'.
-            aes.Key = key;                      //Set Key Value (Declared And Populated Above)           
+            if (!CngKey.Exists(crypto_key_name, key_storage_provider)) 
+                { 
+                    CngKeyCreationParameters key_creation_parameters = new CngKeyCreationParameters() 
+                    { 
+                        Provider = key_storage_provider,
+                    };
+                CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters); 
+            }
+            Aes aes = new AesCng(crypto_key_name, key_storage_provider);
             aes.Mode = CipherMode.CBC;          //Set Block Cipher Mode - Possible Values Include CBC, CFB, CTS, ECB, and OFB.
-            aes.IV = iv;                        //Set IV Value (Declared And Populated Above) - Only Used In Non-ECB Block Cipher Modes 
             aes.Padding = PaddingMode.PKCS7;    //Set Block Cipher Padding Mode - Possible Values Include 'PKCS7', 'ANSI X923', and 'ISO10126'.
             return aes;
         }

@@ -16,7 +16,19 @@ namespace Banking_Application
 
         }
         
-        public Savings_Account(String name, String address_line_1, String address_line_2, String address_line_3, String town, double balance, double interestRate) : base(name, address_line_1, address_line_2, address_line_3, town, balance)
+        public Savings_Account(
+            String name,
+            String address_line_1,
+            String address_line_2,
+            String address_line_3,
+            String town,
+            double balance,
+            double interestRate) : base(
+                name,
+                address_line_1,
+                address_line_2,
+                address_line_3,
+                town, balance)
         {
             this.interestRate = interestRate;
         }

@@ -335,6 +335,18 @@ namespace Banking_Application
                     case "6":
                         running = false;
                         break;
+                    case "7":
+                        string plaintext = "Hello, AES helper!";
+
+                        // Encrypt
+                        var (cipherText, iv) = AesHelper.Encrypt(plaintext);
+                        Console.WriteLine("Ciphertext (Base64): " + cipherText);
+                        Console.WriteLine("IV (Base64): " + iv);
+
+                        // Decrypt
+                        string decrypted = AesHelper.Decrypt(cipherText, iv);
+                        Console.WriteLine("Decrypted text: " + decrypted);
+                        break;
                     default:    
                         Console.WriteLine("INVALID OPTION CHOSEN - PLEASE TRY AGAIN");
                         break;
