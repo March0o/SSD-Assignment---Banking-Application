@@ -73,7 +73,7 @@ namespace SSD_Assignment___Banking_Application
                     { 
                         Provider = key_storage_provider,
                     };
-                CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters); 
+                CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters); // Default is 256 bits
             }
             Aes aes = new AesCng(crypto_key_name, key_storage_provider);
             aes.Mode = CipherMode.CBC;          //Set Block Cipher Mode - Possible Values Include CBC, CFB, CTS, ECB, and OFB.

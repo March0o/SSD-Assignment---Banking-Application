@@ -34,7 +34,7 @@ namespace Banking_Application
                 Console.WriteLine("Enter Password:");
                 password = Console.ReadLine();
 
-                authenticated = dal.Authenticate(username, password);
+                authenticated = dal.AuthenticateLogin(username, password);
 
                 loopCount++;
 
@@ -47,7 +47,7 @@ namespace Banking_Application
                 Console.WriteLine("");
                 Console.WriteLine("***Banking Application Menu***");
                 Console.WriteLine("1. Add Bank Account");
-                Console.WriteLine("2. Close Bank Account");
+                Console.WriteLine("2. Close Bank Account (ADMIN ONLY)");
                 Console.WriteLine("3. View Account Information");
                 Console.WriteLine("4. Make Lodgement");
                 Console.WriteLine("5. Make Withdrawal");
@@ -242,6 +242,12 @@ namespace Banking_Application
                         break;
                     // Close Bank Account
                     case "2":
+                        if (!dal.isAdmin())
+                        {
+                            Console.WriteLine("ACCESS DENIED - ADMINISTRATOR PRIVILEGES REQUIRED");
+                            break;
+                        }
+
                         accNo = "";
                         loopCount = 0;
                         bool validAccNo = false;

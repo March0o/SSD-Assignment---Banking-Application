@@ -20,7 +20,8 @@ namespace Banking_Application
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
         private readonly Logger logger;
-
+        private bool admin = false;
+        private string loggedUser = "";
 
         private Data_Access_Layer() //Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
@@ -228,7 +229,7 @@ namespace Banking_Application
                 }
 
                 command.ExecuteNonQuery();
-                logger.Log("N/A", ba.accountNo, ba.name, Transaction_Type.Add_Account, "");
+                logger.Log(loggedUser, ba.accountNo, ba.name, Transaction_Type.Add_Account, "");
             }
             GC.Collect(); // Clear Memory
             return ba.accountNo;
@@ -282,7 +283,7 @@ namespace Banking_Application
                             balance = ba.balance,
                             interestRate = ((Savings_Account)ba).interestRate
                         };
-                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
+                        logger.Log(loggedUser, decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
                         return decryptedAcc;
                     }
                 }
@@ -335,7 +336,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Close_Account, "");
+                logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Close_Account, "");
                 GC.Collect(); // Clear Memory
                 return true;
             }
@@ -388,7 +389,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Lodge_Funds, reason);
+                logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Lodge_Funds, reason);
                 GC.Collect(); // Clear Memory
                 return true;
             }
@@ -440,7 +441,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Withdraw_Funds, reason);
+                logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Withdraw_Funds, reason);
                 GC.Collect(); // Clear Memory
                 return true;
             }
@@ -452,12 +453,13 @@ namespace Banking_Application
             - Validates User Credentials Against AD-DS
             - Verifies Group Membership
          */
-        public bool Authenticate(string username, string password)
+        public bool AuthenticateLogin(string username, string password)
         {
             return true; // Temporarily Disable AD-DS Authentication For Testing Purposes.
 
             const string domainName = "ITSLIGO.LAN";  //Name Of AD-DS Domain Being Authenticated To/Searched
             const string groupName = "Bank Teller";   //User Group Name
+            const string groupAdminName = "Bank Teller Administrator";   //User Group Name
             string outputMessage = "";
             bool authorized = false;
 
@@ -468,8 +470,10 @@ namespace Banking_Application
             //  Verify Group Membership Of User Account
             UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(domainContext, IdentityType.SamAccountName, username);
             bool isGroupMember = false;
+            bool isGroupAdminMember = false;
 
             if (userPrincipal != null) isGroupMember = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, groupName); //Throws Exception If User Principal Is Null
+            if (userPrincipal != null) admin = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, groupAdminName); //Throws Exception If User Principal Is Null
 
             //Output
             if (validCreds == false) outputMessage = "User Is Not Authorized To Perform This Action - Invalid User Credentials Provided.";
@@ -477,9 +481,17 @@ namespace Banking_Application
             else { authorized = true; outputMessage = "User Is Authorized To Perform Access Control Protected Action"; }
 
             Console.WriteLine(outputMessage);
-            if (authorized) logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Successful Authentication");
+            if (authorized) { logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Successful Authentication"); loggedUser = username;  }
             else logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Failed Authentication");
             return authorized;
+        }
+
+        /*
+         Check Admin Status
+         */
+        public bool isAdmin()
+        {
+            return admin;
         }
 
         /*
