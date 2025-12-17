@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices.AccountManagement;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -227,7 +228,7 @@ namespace Banking_Application
                 }
 
                 command.ExecuteNonQuery();
-                logger.Log("N/A", ba.accountNo, ba.name, "1", "");
+                logger.Log("N/A", ba.accountNo, ba.name, Transaction_Type.Add_Account, "");
             }
             GC.Collect(); // Clear Memory
             return ba.accountNo;
@@ -265,7 +266,7 @@ namespace Banking_Application
                             balance = ba.balance,
                             overdraftAmount = ((Current_Account)ba).overdraftAmount
                         };
-                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, "3", "");
+                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
                         return decryptedAcc;
                     }
                     else
@@ -281,7 +282,7 @@ namespace Banking_Application
                             balance = ba.balance,
                             interestRate = ((Savings_Account)ba).interestRate
                         };
-                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, "3", "");
+                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
                         return decryptedAcc;
                     }
                 }
@@ -334,7 +335,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, "2", "");
+                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Close_Account, "");
                 GC.Collect(); // Clear Memory
                 return true;
             }
@@ -387,7 +388,7 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, "4", reason);
+                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Lodge_Funds, reason);
                 GC.Collect(); // Clear Memory
                 return true;
             }
@@ -439,11 +440,46 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
 
                 }
-                logger.Log("N/A", decryptedAccNo, decryptedName, "5", reason);
+                logger.Log("N/A", decryptedAccNo, decryptedName, Transaction_Type.Withdraw_Funds, reason);
                 GC.Collect(); // Clear Memory
                 return true;
             }
 
+        }
+
+        /*
+         Authentication Method
+            - Validates User Credentials Against AD-DS
+            - Verifies Group Membership
+         */
+        public bool Authenticate(string username, string password)
+        {
+            return true; // Temporarily Disable AD-DS Authentication For Testing Purposes.
+
+            const string domainName = "ITSLIGO.LAN";  //Name Of AD-DS Domain Being Authenticated To/Searched
+            const string groupName = "Bank Teller";   //User Group Name
+            string outputMessage = "";
+            bool authorized = false;
+
+            //  Verify Validity Of User Credentials
+            PrincipalContext domainContext = new PrincipalContext(ContextType.Domain, domainName);
+            bool validCreds = domainContext.ValidateCredentials(username, password);
+
+            //  Verify Group Membership Of User Account
+            UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(domainContext, IdentityType.SamAccountName, username);
+            bool isGroupMember = false;
+
+            if (userPrincipal != null) isGroupMember = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, groupName); //Throws Exception If User Principal Is Null
+
+            //Output
+            if (validCreds == false) outputMessage = "User Is Not Authorized To Perform This Action - Invalid User Credentials Provided.";
+            else if (isGroupMember == false) outputMessage = "User Is Not Authorized To Perform This Action - User Is Not A Member Of The Authorized User Group.";
+            else { authorized = true; outputMessage = "User Is Authorized To Perform Access Control Protected Action"; }
+
+            Console.WriteLine(outputMessage);
+            if (authorized) logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Successful Authentication");
+            else logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Failed Authentication");
+            return authorized;
         }
 
         /*

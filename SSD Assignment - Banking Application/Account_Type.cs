@@ -16,4 +16,5 @@ namespace Banking_Application
         public static int Current_Account = 1;
         public static int Savings_Account = 2;
     }
+
 }

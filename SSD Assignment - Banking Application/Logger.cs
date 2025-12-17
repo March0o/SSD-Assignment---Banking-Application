@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net;
 using System.Reflection;
+using Banking_Application;
 
 namespace SSD_Assignment___Banking_Application
 {
@@ -30,7 +31,7 @@ namespace SSD_Assignment___Banking_Application
             eventLog.WriteEntry("Setup Complete");
         }
 
-        public void Log(string teller, string accNo, string name, string type, string reason)
+        public void Log(string teller, string accNo, string name, Transaction_Type type, string reason)
         {
             DateTime now = DateTime.Now;
             string ip = GetLocalIPAddress();
@@ -47,7 +48,7 @@ namespace SSD_Assignment___Banking_Application
             eventLog.WriteEntry(
                 $"Teller: {teller}\n" +
                 $"Account: {accNo} | {name}\n" +
-                $"Type: {type}\n" +
+                $"Type: {(int)type}\n" +
                 $"Time: {now}\n" +
                 $"IP: {ip}\n" +
                 $"Reason: {reason}\n" +

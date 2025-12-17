@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices.AccountManagement;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -10,9 +11,34 @@ namespace Banking_Application
     {
         public static void Main(string[] args)
         {
-            
+            int loopCount = 0;
+            bool authenticated = false;
+            string username = "";
+            string password = "";
+
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
             bool running = true;
+
+            // Authorize
+            do
+            {
+                if (loopCount > 3)
+                {
+                    Console.WriteLine("TOO MANY INVALID ATTEMPTS");
+                    throw new UnauthorizedAccessException();
+                }
+                if (loopCount > 0) Console.WriteLine("INVALID CREDENTIALS - PLEASE TRY AGAIN");
+
+                Console.WriteLine("Enter Username:");
+                username = Console.ReadLine();
+                Console.WriteLine("Enter Password:");
+                password = Console.ReadLine();
+
+                authenticated = dal.Authenticate(username, password);
+
+                loopCount++;
+
+            } while (authenticated == false);
 
             do
             {
@@ -35,7 +61,7 @@ namespace Banking_Application
                     case "1":
                         // Account Type
                         String accountType = "";
-                        int loopCount = 0;
+                        loopCount = 0;
                         do
                         {
                             if(loopCount > 3)
@@ -442,6 +468,5 @@ namespace Banking_Application
             } while (running != false);
 
         }
-
     }
 }

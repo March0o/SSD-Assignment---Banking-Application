@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>SSD_Assignment___Banking_Application</RootNamespace>
+    <TargetFramework>net9.0-windows</TargetFramework>
+	  <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+	  <RootNamespace>SSD_Assignment___Banking_Application</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -11,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.0" />
     <PackageReference Include="System.Diagnostics.EventLog" Version="10.0.1" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.1" />
   </ItemGroup>
 
 </Project>
