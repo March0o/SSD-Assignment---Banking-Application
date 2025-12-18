@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.DirectoryServices.AccountManagement;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace Banking_Application
     {
         private readonly AES_DLE encryption = new AES_DLE();
         private List<Bank_Account> accounts;
-        private const String databaseName = "Banking Database.db";
+        private const String databaseName = ApplicationConstants.database_file;
         private static Data_Access_Layer instance = new Data_Access_Layer();
         private readonly Logger logger;
         private bool admin = false;
@@ -31,7 +32,7 @@ namespace Banking_Application
         public static Data_Access_Layer getInstance()
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -57,27 +58,7 @@ namespace Banking_Application
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText =
-                @"
-                    CREATE TABLE IF NOT EXISTS Bank_Accounts(    
-                        accountNo TEXT PRIMARY KEY,
-                        accountNo_iv TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        name_iv TEXT NOT NULL,
-                        address_line_1 TEXT,
-                        address_line_1_iv TEXT NOT NULL,
-                        address_line_2 TEXT,
-                        address_line_2_iv TEXT NOT NULL,
-                        address_line_3 TEXT,
-                        address_line_3_iv TEXT NOT NULL,
-                        town TEXT NOT NULL,
-                        town_iv TEXT NOT NULL,
-                        balance REAL NOT NULL,
-                        accountType INTEGER NOT NULL,
-                        overdraftAmount REAL,
-                        interestRate REAL
-                    ) WITHOUT ROWID
-                ";
+                command.CommandText = Prepared_Statements.create_table_command;
 
                 command.ExecuteNonQuery();
                 
@@ -90,13 +71,7 @@ namespace Banking_Application
             conn.Open();
 
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-                SELECT 1
-                FROM sqlite_master
-                WHERE type = 'table'
-                  AND name = @tableName
-                LIMIT 1;
-            ";
+            cmd.CommandText = Prepared_Statements.check_table_command;
 
             cmd.Parameters.AddWithValue("@tableName", tableName);
 
@@ -105,7 +80,7 @@ namespace Banking_Application
 
         public void loadBankAccounts()
         {
-            if (!File.Exists(Data_Access_Layer.databaseName) || !TableExists("Bank_Accounts"))
+            if (!File.Exists(Data_Access_Layer.databaseName) || !TableExists(ApplicationConstants.table_name))
                 initialiseDatabase();
             else
             {
@@ -113,9 +88,8 @@ namespace Banking_Application
                 using (var connection = getDatabaseConnection())
                 {
                     connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "SELECT * FROM Bank_Accounts";
-                    SqliteDataReader dr = command.ExecuteReader();
+                    using var transaction = new SqliteCommand(Prepared_Statements.get_accounts_command, connection);
+                    SqliteDataReader dr = transaction.ExecuteReader();
                     
                     while(dr.Read())
                     {
@@ -176,7 +150,7 @@ namespace Banking_Application
         public String addBankAccount(Bank_Account ba) 
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -188,53 +162,42 @@ namespace Banking_Application
 
             accounts.Add(ba);
 
+            // Encrypt Fields
+            var acc_no_encrypt = EncryptField(ba.accountNo);
+            var name_encrypt = EncryptField(ba.name);
+            var addr1_encrypt = EncryptField(ba.address_line_1);
+            var addr2_encrypt = EncryptField(ba.address_line_2);
+            var addr3_encrypt = EncryptField(ba.address_line_3);
+            var town_encrypt = EncryptField(ba.town);
+
+            // https://stackoverflow.com/questions/14376473/what-are-good-ways-to-prevent-sql-injection
             using (var connection = getDatabaseConnection())
             {
                 connection.Open();
-                var command = connection.CreateCommand();
-                var acc_no_encrypt = EncryptField(ba.accountNo);
-                var name_encrypt = EncryptField(ba.name);
-                var addr1_encrypt = EncryptField(ba.address_line_1);
-                var addr2_encrypt = EncryptField(ba.address_line_2);
-                var addr3_encrypt = EncryptField(ba.address_line_3);
-                var town_encrypt = EncryptField(ba.town);
-                command.CommandText =
-                @"
-                    INSERT INTO Bank_Accounts VALUES(" +
-                    "'" + acc_no_encrypt.Item1 + "', " +
-                    "'" + acc_no_encrypt.Item2 + "', " +
-                    "'" + name_encrypt.Item1 + "', " +
-                    "'" + name_encrypt.Item2 + "', " +
-                    "'" + addr1_encrypt.Item1 + "', " +
-                    "'" + addr1_encrypt.Item2 + "', " +
-                    "'" + addr2_encrypt.Item1 + "', " +
-                    "'" + addr2_encrypt.Item2 + "', " +
-                    "'" + addr3_encrypt.Item1 + "', " +
-                    "'" + addr3_encrypt.Item2 + "', " +
-                    "'" + town_encrypt.Item1 + "', " +
-                    "'" + town_encrypt.Item2 + "', " +
-                    ba.balance + ", " +
-                    (ba.GetType() == typeof(Current_Account) ? Account_Type.Current_Account : Account_Type.Savings_Account) + ", ";
-
-                if (ba.GetType() == typeof(Current_Account))
-                {
-                    Current_Account ca = (Current_Account)ba;
-                    command.CommandText += ca.overdraftAmount + ", NULL)";
-                }
-
-                else
-                {
-                    Savings_Account sa = (Savings_Account)ba;
-                    command.CommandText += "NULL," + sa.interestRate + ")";
-                }
-
-                command.ExecuteNonQuery();
+                using var transaction = new SqliteCommand(Prepared_Statements.add_account_command, connection);
+                // Each line = one parameter
+                transaction.Parameters.Add("@accountNo", SqliteType.Text).Value = acc_no_encrypt.Item1;
+                transaction.Parameters.Add("@accountNo_iv", SqliteType.Text).Value = acc_no_encrypt.Item2;
+                transaction.Parameters.Add("@name", SqliteType.Text).Value = name_encrypt.Item1;
+                transaction.Parameters.Add("@name_iv", SqliteType.Text).Value = name_encrypt.Item2;
+                transaction.Parameters.Add("@address_line_1", SqliteType.Text).Value = addr1_encrypt.Item1;
+                transaction.Parameters.Add("@address_line_1_iv", SqliteType.Text).Value = addr1_encrypt.Item2;
+                transaction.Parameters.Add("@address_line_2", SqliteType.Text).Value = addr2_encrypt.Item1;
+                transaction.Parameters.Add("@address_line_2_iv", SqliteType.Text).Value = addr2_encrypt.Item2;
+                transaction.Parameters.Add("@address_line_3", SqliteType.Text).Value = addr3_encrypt.Item1;
+                transaction.Parameters.Add("@address_line_3_iv", SqliteType.Text).Value = addr3_encrypt.Item2;
+                transaction.Parameters.Add("@town", SqliteType.Text).Value = town_encrypt.Item1;
+                transaction.Parameters.Add("@town_iv", SqliteType.Text).Value = town_encrypt.Item2;
+                transaction.Parameters.Add("@balance", SqliteType.Real).Value = ba.balance;
+                transaction.Parameters.Add("@accountType", SqliteType.Integer).Value = (ba.GetType() == typeof(Current_Account) ? Account_Type.Current_Account : Account_Type.Savings_Account);
+                transaction.Parameters.Add("@overdraftAmount", SqliteType.Real).Value = (ba is Current_Account ca ? ca.overdraftAmount : (object)DBNull.Value);
+                transaction.Parameters.Add("@interestRate", SqliteType.Real).Value = (ba is Savings_Account sa ? sa.interestRate : (object)DBNull.Value);
+                transaction.ExecuteNonQuery();
                 logger.Log(loggedUser, ba.accountNo, ba.name, Transaction_Type.Add_Account, "");
             }
             GC.Collect(); // Clear Memory
             return ba.accountNo;
         }
-
 
         /*
          Find Bank Account by Account Number
@@ -243,7 +206,7 @@ namespace Banking_Application
         public Bank_Account findBankAccountByAccNo(String accNo) 
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -267,7 +230,7 @@ namespace Banking_Application
                             balance = ba.balance,
                             overdraftAmount = ((Current_Account)ba).overdraftAmount
                         };
-                        logger.Log("N/A", decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
+                        logger.Log(loggedUser, decryptedAcc.accountNo, decryptedAcc.name, Transaction_Type.View_Account, "");
                         return decryptedAcc;
                     }
                     else
@@ -300,7 +263,7 @@ namespace Banking_Application
         public bool closeBankAccount(String accNo) 
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -331,9 +294,9 @@ namespace Banking_Application
                 using (var connection = getDatabaseConnection())
                 {
                     connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = '" + toRemove.accountNo + "'";
-                    command.ExecuteNonQuery();
+                    using var transaction = new SqliteCommand(Prepared_Statements.delete_account_command, connection);
+                    transaction.Parameters.Add("@accountNo", SqliteType.Text).Value = toRemove.accountNo;
+                    transaction.ExecuteNonQuery();
 
                 }
                 logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Close_Account, "");
@@ -343,7 +306,6 @@ namespace Banking_Application
 
         }
 
-
         /*
          Lodge
             - Added Decryption on retrieval
@@ -351,7 +313,7 @@ namespace Banking_Application
         public bool lodge(String accNo, double amountToLodge, string reason)
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -378,21 +340,17 @@ namespace Banking_Application
                 GC.Collect(); // Clear Memory
                 return false;
             }
-            else
+
+            using (var connection = getDatabaseConnection())
             {
-
-                using (var connection = getDatabaseConnection())
-                {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = " + toLodgeTo.balance + " WHERE accountNo = '" + toLodgeTo.accountNo + "'";
-                    command.ExecuteNonQuery();
-
-                }
-                logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Lodge_Funds, reason);
-                GC.Collect(); // Clear Memory
-                return true;
+                connection.Open();
+                using var transaction = new SqliteCommand(Prepared_Statements.update_account_balance_command, connection);
+                transaction.Parameters.Add("@accountNo", SqliteType.Text).Value = toLodgeTo.accountNo;
+                transaction.ExecuteNonQuery();
             }
+            logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Lodge_Funds, reason);
+            GC.Collect(); // Clear Memory
+            return true;
 
         }
 
@@ -404,7 +362,7 @@ namespace Banking_Application
         public bool withdraw(String accNo, double amountToWithdraw, string reason)
         {
             // Reduce Reflection Check Calling Method
-            if (Verify_Calling_Method("SSD Assignment - Banking Application.dll", "Program", "Main") != true)
+            if (Verify_Calling_Method(ApplicationConstants.application_dll, "Program", "Main") != true)
             {
                 throw new MethodAccessException();
             }
@@ -428,23 +386,18 @@ namespace Banking_Application
 
             }
 
-            if (toWithdrawFrom == null || result == false)
-                return false;
-            else
+            if (toWithdrawFrom == null || result == false)  return false;
+
+            using (var connection = getDatabaseConnection())
             {
-
-                using (var connection = getDatabaseConnection())
-                {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = " + toWithdrawFrom.balance + " WHERE accountNo = '" + toWithdrawFrom.accountNo + "'";
-                    command.ExecuteNonQuery();
-
-                }
-                logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Withdraw_Funds, reason);
-                GC.Collect(); // Clear Memory
-                return true;
+                connection.Open();
+                using var transaction = new SqliteCommand(Prepared_Statements.update_account_balance_command, connection);
+                transaction.Parameters.Add("@accountNo", SqliteType.Text).Value = toWithdrawFrom.accountNo;
+                transaction.ExecuteNonQuery();
             }
+            logger.Log(loggedUser, decryptedAccNo, decryptedName, Transaction_Type.Withdraw_Funds, reason);
+            GC.Collect(); // Clear Memory
+            return true;
 
         }
 
@@ -457,14 +410,11 @@ namespace Banking_Application
         {
             return true; // Temporarily Disable AD-DS Authentication For Testing Purposes.
 
-            const string domainName = "ITSLIGO.LAN";  //Name Of AD-DS Domain Being Authenticated To/Searched
-            const string groupName = "Bank Teller";   //User Group Name
-            const string groupAdminName = "Bank Teller Administrator";   //User Group Name
             string outputMessage = "";
             bool authorized = false;
 
             //  Verify Validity Of User Credentials
-            PrincipalContext domainContext = new PrincipalContext(ContextType.Domain, domainName);
+            PrincipalContext domainContext = new PrincipalContext(ContextType.Domain, ApplicationConstants.tellerRoleName);
             bool validCreds = domainContext.ValidateCredentials(username, password);
 
             //  Verify Group Membership Of User Account
@@ -472,17 +422,17 @@ namespace Banking_Application
             bool isGroupMember = false;
             bool isGroupAdminMember = false;
 
-            if (userPrincipal != null) isGroupMember = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, groupName); //Throws Exception If User Principal Is Null
-            if (userPrincipal != null) admin = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, groupAdminName); //Throws Exception If User Principal Is Null
+            if (userPrincipal != null) isGroupMember = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, ApplicationConstants.tellerRoleName); //Throws Exception If User Principal Is Null
+            if (userPrincipal != null) admin = userPrincipal.IsMemberOf(domainContext, IdentityType.SamAccountName, ApplicationConstants.adminTellerRoleName); //Throws Exception If User Principal Is Null
 
             //Output
-            if (validCreds == false) outputMessage = "User Is Not Authorized To Perform This Action - Invalid User Credentials Provided.";
-            else if (isGroupMember == false) outputMessage = "User Is Not Authorized To Perform This Action - User Is Not A Member Of The Authorized User Group.";
-            else { authorized = true; outputMessage = "User Is Authorized To Perform Access Control Protected Action"; }
+            if (validCreds == false) outputMessage = ApplicationConstants.invalidCredentialsMessage;
+            else if (isGroupMember == false) outputMessage = ApplicationConstants.invalidUserGroup;
+            else { authorized = true; outputMessage = ApplicationConstants.authorizedUser; }
 
             Console.WriteLine(outputMessage);
-            if (authorized) { logger.Log(username, "N/A", "N/A", Transaction_Type.Login_Attempt, "Successful Authentication"); loggedUser = username;  }
-            else logger.Log(username, "N/A", "N/A", Transaction_Type.Login_Attempt, "Failed Authentication");
+            if (authorized) { logger.Log(username, ApplicationConstants.unavailableField, ApplicationConstants.unavailableField, Transaction_Type.Login_Attempt, ApplicationConstants.successfulAuthentication); loggedUser = username;  }
+            else logger.Log(username, ApplicationConstants.unavailableField, ApplicationConstants.unavailableField, Transaction_Type.Login_Attempt, ApplicationConstants.failedAuthentication);
             GC.Collect(); // Clear Memory
             return authorized;
         }

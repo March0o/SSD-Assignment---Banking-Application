@@ -64,7 +64,7 @@ namespace SSD_Assignment___Banking_Application
         // TODO ASK ABOUT KEY LENGTH
         public Aes Setup_AES()
         {
-            String crypto_key_name = "COOL-KEY-NAME-3"; 
+            String crypto_key_name = ApplicationConstants.key_name; 
             CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider; 
 
             if (!CngKey.Exists(crypto_key_name, key_storage_provider)) 

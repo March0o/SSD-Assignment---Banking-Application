@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SSD_Assignment___Banking_Application;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,15 +37,15 @@ namespace Banking_Application
             String town, double balance)
         {
             this.accountNo = System.Guid.NewGuid().ToString();
-            this.accountNo_iv = "TO-BE-SET";
+            this.accountNo_iv = ApplicationConstants.default_account_field;
             this.name = name;
-            this.name_iv = "TO-BE-SET";
+            this.name_iv = ApplicationConstants.default_account_field;
             this.address_line_1 = address_line_1;
-            this.address_line_1_iv = "TO-BE-SET";
+            this.address_line_1_iv = ApplicationConstants.default_account_field;
             this.address_line_2 = address_line_2;
-            this.address_line_2_iv = "TO-BE-SET";
+            this.address_line_2_iv = ApplicationConstants.default_account_field;
             this.address_line_3 = address_line_3;
-            this.address_line_3_iv = "TO-BE-SET";
+            this.address_line_3_iv = ApplicationConstants.default_account_field;
             this.town = town;
             this.balance = balance;
         }
