@@ -70,8 +70,7 @@ namespace Banking_Application
             "Address Line 3: " + address_line_3 + "\n" +
             "Town: " + town + "\n" +
             "Balance: " + balance + "\n";
-
-    }
+        }
 
     }
 }

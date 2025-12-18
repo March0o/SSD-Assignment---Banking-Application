@@ -1,8 +1,4 @@
-﻿/*
- * Student Name: Martynas Cepoakaitis
- * Student No: S00234148
- */
-
+﻿
 namespace Banking_Application
 {
     public enum Transaction_Type

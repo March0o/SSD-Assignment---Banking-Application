@@ -17,7 +17,7 @@ namespace Banking_Application
     {
         private readonly AES_DLE encryption = new AES_DLE();
         private List<Bank_Account> accounts;
-        public static String databaseName = "Banking Database.db";
+        private const String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
         private readonly Logger logger;
         private bool admin = false;
@@ -84,7 +84,7 @@ namespace Banking_Application
             }
         }
 
-        public static bool TableExists(string tableName)
+        private static bool TableExists(string tableName)
         {
             using var conn = new SqliteConnection($"Data Source={Data_Access_Layer.databaseName}");
             conn.Open();
@@ -214,7 +214,7 @@ namespace Banking_Application
                     "'" + town_encrypt.Item1 + "', " +
                     "'" + town_encrypt.Item2 + "', " +
                     ba.balance + ", " +
-                    (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
+                    (ba.GetType() == typeof(Current_Account) ? Account_Type.Current_Account : Account_Type.Savings_Account) + ", ";
 
                 if (ba.GetType() == typeof(Current_Account))
                 {
@@ -481,8 +481,9 @@ namespace Banking_Application
             else { authorized = true; outputMessage = "User Is Authorized To Perform Access Control Protected Action"; }
 
             Console.WriteLine(outputMessage);
-            if (authorized) { logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Successful Authentication"); loggedUser = username;  }
-            else logger.Log("N/A", username, "N/A", Transaction_Type.Login_Attempt, "Failed Authentication");
+            if (authorized) { logger.Log(username, "N/A", "N/A", Transaction_Type.Login_Attempt, "Successful Authentication"); loggedUser = username;  }
+            else logger.Log(username, "N/A", "N/A", Transaction_Type.Login_Attempt, "Failed Authentication");
+            GC.Collect(); // Clear Memory
             return authorized;
         }
 
@@ -515,7 +516,11 @@ namespace Banking_Application
             return Encoding.UTF8.GetString(decrypted_data);
         }
 
-        static bool Verify_Calling_Method(string desiredAssesmblyName, string desiredClassName, string desiredMethodName, string desiredFileName = null, int desiredLineNo = 0)
+        /*
+         Avoid Reflection Attacks - Verify Calling Method
+            - If Any Parameter Is NULL, No Check Is Performed For That Parameter.
+         */
+        private static bool Verify_Calling_Method(string desiredAssesmblyName, string desiredClassName, string desiredMethodName, string desiredFileName = null, int desiredLineNo = 0)
         {
 
             StackFrame stackFrame = new StackFrame(2, true);
