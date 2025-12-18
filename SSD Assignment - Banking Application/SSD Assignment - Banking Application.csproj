@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net8</TargetFramework>
 	  <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
 	  <RootNamespace>SSD_Assignment___Banking_Application</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>

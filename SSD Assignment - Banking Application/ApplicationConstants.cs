@@ -8,6 +8,7 @@ namespace SSD_Assignment___Banking_Application
 {
     internal class ApplicationConstants
     {
+        // Variables
         public const string unavailableField = "N/A"; // Used In Logger when a field is unavailable
         public const string table_name = "Bank_Accounts"; // Database Table Name
         public const string key_name = "encryption_key"; // Name Of The Key In Windows DPAPI Key Store
