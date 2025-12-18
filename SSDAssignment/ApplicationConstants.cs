@@ -14,7 +14,7 @@ namespace SSD_Assignment___Banking_Application
         public const string key_name = "encryption_key"; // Name Of The Key In Windows DPAPI Key Store
         public const string default_account_field = "TO-BE-SET"; // Default IV Value For Account Fields
         public const string database_file = "Banking Database.db"; // Database File Name
-        public const string application_dll = "SSD Assignment - Banking Application.dll"; // Application DLL Name
+        public const string application_dll = "SSDAssignment.dll"; // Application DLL Name
         public const string domainName = "ITSLIGO.LAN";  // Domain Name For Authentication
         public const string tellerRoleName = "Bank Teller"; // Role Name For Bank Tellers
         public const string adminTellerRoleName = "Bank Teller Administrator"; // Role Name For Bank Teller Administrators
