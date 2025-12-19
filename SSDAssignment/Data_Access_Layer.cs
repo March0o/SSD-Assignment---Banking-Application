@@ -414,7 +414,7 @@ namespace Banking_Application
             bool authorized = false;
 
             //  Verify Validity Of User Credentials
-            PrincipalContext domainContext = new PrincipalContext(ContextType.Domain, ApplicationConstants.tellerRoleName);
+            PrincipalContext domainContext = new PrincipalContext(ContextType.Domain, ApplicationConstants.domainName);
             bool validCreds = domainContext.ValidateCredentials(username, password);
 
             //  Verify Group Membership Of User Account
