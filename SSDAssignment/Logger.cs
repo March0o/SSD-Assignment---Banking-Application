@@ -47,7 +47,7 @@ namespace SSD_Assignment___Banking_Application
             if (reason == "") { reason = "N/A"; }
             eventLog.WriteEntry(
                 $"Teller: {teller}\n" +
-                $"Account: {accNo} | {name}\n" +
+                $"Account: {MaskAccountNumber(accNo)} | {MaskName(name)}\n" +
                 $"Type: {(int)type}\n" +
                 $"Time: {now}\n" +
                 $"IP: {ip}\n" +
@@ -55,7 +55,7 @@ namespace SSD_Assignment___Banking_Application
                 $"Metadata: {metadata}");
         }
         // Source - https://stackoverflow.com/questions/6803073/get-local-ip-address
-        public static string GetLocalIPAddress()
+        private static string GetLocalIPAddress()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
@@ -66,6 +66,25 @@ namespace SSD_Assignment___Banking_Application
                 }
             }
             throw new Exception("No network adapters with an IPv4 address in the system!");
+        }
+
+
+        // Masking functions to protect sensitive data in logs
+        private static string MaskAccountNumber(string accNo)
+        {
+            if (string.IsNullOrEmpty(accNo) || accNo.Length < 4)
+                return "****";
+
+            return "****-****-" + accNo[^4..];
+        }
+
+        public static string MaskName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "***";
+
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return string.Join(" ", parts.Select(p => $"{p[0]}***"));
         }
     }
 }
