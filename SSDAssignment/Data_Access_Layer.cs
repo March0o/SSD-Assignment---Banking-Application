@@ -408,7 +408,7 @@ namespace Banking_Application
          */
         public bool AuthenticateLogin(string username, string password)
         {
-            // return true; // Temporarily Disable AD-DS Authentication For Testing Purposes.
+            return true; // Temporarily Disable AD-DS Authentication For Testing Purposes.
 
             string outputMessage = "";
             bool authorized = false;

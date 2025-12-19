@@ -26,6 +26,7 @@ namespace Banking_Application
                 if (loopCount > 3)
                 {
                     Console.WriteLine(ApplicationConstants.TooManyInvalidAttempts);
+                    running = false;
                     throw new UnauthorizedAccessException();
                 }
                 if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidCredentials);
@@ -40,11 +41,11 @@ namespace Banking_Application
                 loopCount++;
 
             } while (authenticated == false);
-
+            // Menu
             do
             {
                 dal.loadBankAccounts(); // Reset Account on Updates
-
+                Console.Clear();
                 Console.WriteLine(ApplicationConstants.MainMenu);
                 String option = Console.ReadLine();
 
@@ -60,6 +61,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidOptionChosen);
@@ -78,6 +80,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidNameEntered);
@@ -96,6 +99,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidAddressLine1Entered);
@@ -122,6 +126,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidTownEntered);
@@ -140,6 +145,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidOpeningBalanceEntered);
@@ -170,6 +176,7 @@ namespace Banking_Application
                                 if (loopCount > 3)
                                 {
                                     Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                    running = false;
                                     break;
                                 }
                                 if (loopCount > 0)
@@ -204,6 +211,7 @@ namespace Banking_Application
                                 if (loopCount > 3)
                                 {
                                     Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                    running = false;
                                     break;
                                 }
                                 if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidInterestRateEntered);
@@ -227,7 +235,7 @@ namespace Banking_Application
                         }
                         String accNo = dal.addBankAccount(ba);
                         Console.WriteLine(ApplicationConstants.NewAccountNumberIs + accNo);
-
+                        endOfOperation();
                         break;
                     // Close Bank Account
                     case "2":
@@ -247,6 +255,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidAccountFormatEntered);
@@ -285,7 +294,7 @@ namespace Banking_Application
                                 }
                             } while (!(ans.Equals("Y") || ans.Equals("N")));
                         }
-
+                        endOfOperation();
                         break;
                     // View Account Information
                     case "3":
@@ -299,6 +308,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidAccountFormatEntered);
@@ -314,7 +324,7 @@ namespace Banking_Application
 
                         if (ba is null) Console.WriteLine(ApplicationConstants.AccountDoesNotExist);
                         else Console.WriteLine(ba.ToString());
-
+                        endOfOperation();
                         break;
                     // Make Lodgement
                     case "4": //Lodge
@@ -328,6 +338,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidAccountFormatEntered);
@@ -379,6 +390,7 @@ namespace Banking_Application
 
                             dal.lodge(accNo, amountToLodge, lodgementReason);
                         }
+                        endOfOperation();
                         break;
                     // Make Withdrawal
                     case "5": //Withdraw
@@ -392,6 +404,7 @@ namespace Banking_Application
                             if (loopCount > 3)
                             {
                                 Console.WriteLine(ApplicationConstants.TooManyInvalidAttemptsReturnMenu);
+                                running = false;
                                 break;
                             }
                             if (loopCount > 0) Console.WriteLine(ApplicationConstants.InvalidAccountFormatEntered);
@@ -449,6 +462,7 @@ namespace Banking_Application
 
                                 Console.WriteLine(ApplicationConstants.InsufficientFunds);
                             }
+                            endOfOperation();
                         }
                         break;
                     // Exit
@@ -463,6 +477,12 @@ namespace Banking_Application
 
             } while (running != false);
 
+        }
+
+        private static void endOfOperation()
+        {
+            Console.WriteLine(ApplicationConstants.continueMessage);
+            Console.ReadKey();
         }
     }
 }

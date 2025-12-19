@@ -25,6 +25,7 @@ namespace SSD_Assignment___Banking_Application
         public const string authorizedUser = "User Is Authorized To Perform Access Control Protected Action"; // Authorized User Message
         public const string successfulAuthentication = "Successful Authentication"; // Successful Authentication Message
         public const string failedAuthentication = "Failed Authentication"; // Failed Authentication Message
+        public const string continueMessage = "Press Any Key To Continue..."; // Continue Message
 
         // Menu Prompts
         public const string MainMenu = "\n***Banking Application Menu***\n1. Add Bank Account\n2. Close Bank Account (ADMIN ONLY)\n3. View Account Information\n4. Make Lodgement\n5.Make Withdrawal\n6. Exit\nCHOOSE OPTION:";
